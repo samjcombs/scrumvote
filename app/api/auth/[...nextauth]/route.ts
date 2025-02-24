@@ -1,12 +1,10 @@
 import NextAuth from "next-auth";
 import GithubProvider from "next-auth/providers/github";
-import type { NextAuthOptions } from "next-auth";
 
-// In-memory storage for rooms and participants
-export const rooms = new Map();
-export const participants = new Map();
+// Remove these exports - they're causing the build error
+// These should be in your data-service.ts file, not here
 
-export const authOptions: NextAuthOptions = {
+const handler = NextAuth({
   providers: [
     GithubProvider({
       clientId: process.env.GITHUB_ID as string,
@@ -14,18 +12,17 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
-    async session({ session, token }) {
-      if (session.user) {
-        session.user.id = token.sub;
-      }
-      return session;
-    },
+    session: ({ session, token }) => ({
+      ...session,
+      user: {
+        ...session.user,
+        id: token.sub,
+      },
+    }),
   },
   pages: {
     signIn: "/auth/signin",
   },
-};
-
-const handler = NextAuth(authOptions);
+});
 
 export { handler as GET, handler as POST }; 

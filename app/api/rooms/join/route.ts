@@ -12,23 +12,23 @@ export async function POST(request: NextRequest) {
   try {
     const { roomId } = await request.json()
     
+    if (!roomId) {
+      return NextResponse.json({ error: 'Room ID is required' }, { status: 400 })
+    }
+    
     const room = getRoom(roomId)
     
     if (!room) {
       return NextResponse.json({ error: 'Room not found' }, { status: 404 })
     }
     
-    // Add user as participant
-    addParticipant(
-      session.user.id, 
-      roomId, 
-      session.user.name || 'Anonymous', 
-      session.user.image || null
-    )
+    const userId = (session.user as any).id
+    const name = session.user.name || 'Anonymous'
+    const image = session.user.image || null
     
-    return NextResponse.json(room)
-  } catch (error) {
-    console.error('Error joining room:', error)
-    return NextResponse.json({ error: 'Failed to join room' }, { status: 500 })
+    const updatedRoom = addParticipant(roomId, userId, name, image)
+    return NextResponse.json(updatedRoom)
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 })
   }
 } 

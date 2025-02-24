@@ -1,126 +1,121 @@
 import { v4 as uuidv4 } from 'uuid';
 
-// In-memory storage
-export const rooms = new Map();
-export const participants = new Map();
+// In-memory data store (replace with database in production)
+let rooms: any[] = [];
+let participants: any[] = [];
 
-// Room functions
-export function createRoom(name, description, ownerId) {
-  const id = uuidv4();
+export function createRoom(name: string, description: string, ownerId: string) {
   const room = {
-    id,
+    id: uuidv4(),
     name,
     description,
     ownerId,
-    createdAt: new Date(),
     active: true,
-    currentTask: null,
     revealed: false,
-    participants: []
+    currentTask: null,
+    createdAt: new Date(),
+    participants: [],
   };
   
-  rooms.set(id, room);
+  rooms.push(room);
   return room;
 }
 
-export function getRoom(id) {
-  return rooms.get(id);
+export function getRoom(roomId: string) {
+  const room = rooms.find(r => r.id === roomId);
+  if (!room) {
+    throw new Error('Room not found');
+  }
+  return room;
 }
 
-export function getUserRooms(userId) {
-  return Array.from(rooms.values()).filter(room => room.ownerId === userId);
+export function getUserRooms(userId: string) {
+  return rooms.filter(room => room.ownerId === userId);
 }
 
-export function getParticipatingRooms(userId) {
-  const userParticipations = Array.from(participants.values())
+export function getParticipatingRooms(userId: string) {
+  const participantRoomIds = participants
     .filter(p => p.userId === userId)
     .map(p => p.roomId);
-    
-  return Array.from(rooms.values())
-    .filter(room => userParticipations.includes(room.id) && room.ownerId !== userId);
+  
+  return rooms.filter(room => 
+    participantRoomIds.includes(room.id) && room.ownerId !== userId
+  );
 }
 
-// Participant functions
-export function addParticipant(userId, roomId, userName, userImage) {
-  const id = uuidv4();
-  const participantKey = `${userId}-${roomId}`;
+export function addParticipant(roomId: string, userId: string, name: string, image: string | null) {
+  const room = getRoom(roomId);
   
-  if (participants.has(participantKey)) {
-    return participants.get(participantKey);
+  // Check if user is already a participant
+  const existingParticipant = participants.find(
+    p => p.roomId === roomId && p.userId === userId
+  );
+  
+  if (existingParticipant) {
+    return room;
   }
   
   const participant = {
-    id,
-    userId,
+    id: uuidv4(),
     roomId,
-    joinedAt: new Date(),
+    userId,
     vote: null,
-    isActive: true,
     user: {
-      name: userName,
-      image: userImage
-    }
+      name,
+      image,
+    },
   };
   
-  participants.set(participantKey, participant);
+  participants.push(participant);
   
-  // Add to room's participants list
-  const room = rooms.get(roomId);
-  if (room) {
-    room.participants.push(participant);
+  // Update room's participants
+  room.participants = participants.filter(p => p.roomId === roomId);
+  
+  return room;
+}
+
+export function submitVote(roomId: string, userId: string, vote: string) {
+  const room = getRoom(roomId);
+  
+  if (room.revealed) {
+    throw new Error('Cannot vote when votes are revealed');
   }
+  
+  const participant = participants.find(
+    p => p.roomId === roomId && p.userId === userId
+  );
+  
+  if (!participant) {
+    throw new Error('Participant not found');
+  }
+  
+  participant.vote = vote;
   
   return participant;
 }
 
-export function submitVote(userId, roomId, vote) {
-  const participantKey = `${userId}-${roomId}`;
-  const participant = participants.get(participantKey);
-  
-  if (participant) {
-    participant.vote = vote;
-    return participant;
-  }
-  
-  return null;
+export function revealVotes(roomId: string) {
+  const room = getRoom(roomId);
+  room.revealed = true;
+  return room;
 }
 
-export function revealVotes(roomId) {
-  const room = rooms.get(roomId);
-  if (room) {
-    room.revealed = true;
-    return room;
-  }
-  return null;
-}
-
-export function resetVotes(roomId) {
-  const room = rooms.get(roomId);
-  if (room) {
-    room.revealed = false;
-    
-    // Reset all votes for this room
-    room.participants.forEach(p => {
+export function resetVotes(roomId: string) {
+  const room = getRoom(roomId);
+  room.revealed = false;
+  
+  // Reset all votes for this room
+  participants
+    .filter(p => p.roomId === roomId)
+    .forEach(p => {
       p.vote = null;
     });
-    
-    return room;
-  }
-  return null;
+  
+  return room;
 }
 
-export function setTask(roomId, task) {
-  const room = rooms.get(roomId);
-  if (room) {
-    room.currentTask = task;
-    room.revealed = false;
-    
-    // Reset all votes for this room
-    room.participants.forEach(p => {
-      p.vote = null;
-    });
-    
-    return room;
-  }
-  return null;
+export function setTask(roomId: string, task: string) {
+  const room = getRoom(roomId);
+  room.currentTask = task;
+  return room;
 } 

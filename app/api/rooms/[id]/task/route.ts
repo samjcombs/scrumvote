@@ -12,25 +12,30 @@ export async function POST(
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
   
+  const roomId = params.id
+  
   try {
     const { task } = await request.json()
     
-    const room = getRoom(params.id)
+    if (!task) {
+      return NextResponse.json({ error: 'Task is required' }, { status: 400 })
+    }
+    
+    const room = getRoom(roomId)
     
     if (!room) {
       return NextResponse.json({ error: 'Room not found' }, { status: 404 })
     }
     
-    if (room.ownerId !== session.user.id) {
+    const userId = (session.user as any).id
+    
+    if (room.ownerId !== userId) {
       return NextResponse.json({ error: 'Only room owner can set task' }, { status: 403 })
     }
     
-    // Set task
-    const updatedRoom = setTask(params.id, task)
-    
+    const updatedRoom = setTask(roomId, task)
     return NextResponse.json(updatedRoom)
-  } catch (error) {
-    console.error('Error setting task:', error)
-    return NextResponse.json({ error: 'Failed to set task' }, { status: 500 })
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 })
   }
 } 

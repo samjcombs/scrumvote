@@ -2,7 +2,7 @@
 
 import Image from 'next/image'
 
-interface Participant {
+type Participant = {
   id: string
   userId: string
   vote: string | null
@@ -12,46 +12,35 @@ interface Participant {
   }
 }
 
-interface ParticipantsListProps {
+export function ParticipantsList({ 
+  participants,
+  revealed
+}: { 
   participants: Participant[]
   revealed: boolean
-}
-
-export function ParticipantsList({ participants, revealed }: ParticipantsListProps) {
+}) {
   return (
     <ul className="space-y-3">
       {participants.map(participant => (
-        <li key={participant.id} className="flex items-center gap-3 p-2 glass dark:glass-dark rounded-lg">
-          {participant.user.image ? (
-            <Image 
-              src={participant.user.image} 
-              alt={participant.user.name || 'User'} 
-              width={32} 
-              height={32} 
-              className="rounded-full"
-            />
-          ) : (
-            <div className="w-8 h-8 rounded-full bg-primary-500 flex items-center justify-center text-white">
-              {participant.user.name?.charAt(0) || 'U'}
+        <li key={participant.id} className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-primary-100 dark:bg-primary-900 rounded-full flex items-center justify-center text-primary-700 dark:text-primary-300">
+              {participant.user.name?.[0] || '?'}
             </div>
-          )}
+            <span>{participant.user.name || 'Anonymous'}</span>
+          </div>
           
-          <span className="flex-1 truncate">{participant.user.name}</span>
-          
-          {participant.vote ? (
-            <span className={`
-              w-8 h-8 flex items-center justify-center rounded-full 
-              ${revealed 
-                ? 'bg-primary-500 text-white' 
-                : 'bg-gray-200 dark:bg-dark-300'}
-            `}>
-              {revealed ? participant.vote : '✓'}
-            </span>
-          ) : (
-            <span className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-200 dark:bg-dark-300 text-gray-500">
-              ?
-            </span>
-          )}
+          <div className="w-8 h-8 flex items-center justify-center">
+            {participant.vote ? (
+              revealed ? (
+                <span className="font-bold">{participant.vote}</span>
+              ) : (
+                <span className="text-green-500">✓</span>
+              )
+            ) : (
+              <span className="text-gray-400">-</span>
+            )}
+          </div>
         </li>
       ))}
     </ul>

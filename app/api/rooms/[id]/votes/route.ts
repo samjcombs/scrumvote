@@ -12,23 +12,19 @@ export async function GET(
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
   
-  const userId = request.nextUrl.searchParams.get('userId')
-  
-  if (!userId) {
-    return NextResponse.json({ error: 'User ID is required' }, { status: 400 })
-  }
+  const roomId = params.id
+  const userId = (session.user as any).id
   
   try {
-    const room = getRoom(params.id)
+    const room = getRoom(roomId)
     if (!room) {
       return NextResponse.json({ error: 'Room not found' }, { status: 404 })
     }
     
-    const participant = room.participants.find(p => p.userId === userId)
+    const participant = room.participants.find((p: any) => p.userId === userId)
     return NextResponse.json({ vote: participant?.vote || null })
-  } catch (error) {
-    console.error('Error fetching vote:', error)
-    return NextResponse.json({ error: 'Failed to fetch vote' }, { status: 500 })
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 })
   }
 }
 
@@ -43,17 +39,18 @@ export async function POST(
   }
   
   try {
-    const { userId, vote } = await request.json()
+    const { vote } = await request.json()
     
-    const participant = submitVote(userId, params.id, vote)
-    
-    if (!participant) {
-      return NextResponse.json({ error: 'Participant not found' }, { status: 404 })
+    if (!vote) {
+      return NextResponse.json({ error: 'Vote is required' }, { status: 400 })
     }
     
+    const roomId = params.id
+    const userId = (session.user as any).id
+    
+    const participant = submitVote(roomId, userId, vote)
     return NextResponse.json(participant)
-  } catch (error) {
-    console.error('Error submitting vote:', error)
-    return NextResponse.json({ error: 'Failed to submit vote' }, { status: 500 })
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 })
   }
 } 

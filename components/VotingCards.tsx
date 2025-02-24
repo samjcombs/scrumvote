@@ -1,45 +1,42 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
 
-const CARD_VALUES = ['0', '1', '2', '3', '5', '8', '13', '21', '34', '?']
+const CARD_VALUES = ['0', '1', '2', '3', '5', '8', '13', '21', '?']
 
-interface VotingCardsProps {
+export function VotingCards({ 
+  roomId, 
+  userId,
+  revealed,
+  disabled = false
+}: { 
   roomId: string
   userId: string
   revealed: boolean
-  disabled: boolean
-}
+  disabled?: boolean
+}) {
+  const [selectedValue, setSelectedValue] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
 
-export function VotingCards({ roomId, userId, revealed, disabled }: VotingCardsProps) {
-  const [selectedCard, setSelectedCard] = useState<string | null>(null)
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const router = useRouter()
-  
+  // Fetch current vote when component mounts
   useEffect(() => {
-    // Fetch current vote if exists
-    const fetchCurrentVote = async () => {
+    const fetchVote = async () => {
       try {
         const response = await fetch(`/api/rooms/${roomId}/votes?userId=${userId}`)
-        if (response.ok) {
-          const data = await response.json()
-          if (data.vote) {
-            setSelectedCard(data.vote)
-          }
-        }
+        const data = await response.json()
+        setSelectedValue(data.vote)
       } catch (error) {
-        console.error('Error fetching current vote:', error)
+        console.error('Error fetching vote:', error)
       }
     }
     
-    fetchCurrentVote()
+    fetchVote()
   }, [roomId, userId])
-  
+
   const handleVote = async (value: string) => {
-    if (disabled) return
+    if (disabled || isLoading) return
     
-    setIsSubmitting(true)
+    setIsLoading(true)
     
     try {
       const response = await fetch(`/api/rooms/${roomId}/votes`, {
@@ -53,31 +50,32 @@ export function VotingCards({ roomId, userId, revealed, disabled }: VotingCardsP
         }),
       })
       
-      if (response.ok) {
-        setSelectedCard(value)
-        router.refresh()
+      if (!response.ok) {
+        throw new Error('Failed to submit vote')
       }
+      
+      setSelectedValue(value)
     } catch (error) {
       console.error('Error submitting vote:', error)
     } finally {
-      setIsSubmitting(false)
+      setIsLoading(false)
     }
   }
-  
+
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+    <div className="grid grid-cols-3 gap-3">
       {CARD_VALUES.map(value => (
         <button
           key={value}
           onClick={() => handleVote(value)}
-          disabled={isSubmitting || disabled}
+          disabled={disabled || isLoading}
           className={`
-            aspect-[2/3] flex items-center justify-center rounded-lg text-2xl font-bold
-            transition-all transform hover:scale-105
-            ${selectedCard === value 
-              ? 'bg-primary-500 text-white shadow-lg scale-105' 
-              : 'glass dark:glass-dark hover:shadow-md'}
+            aspect-[2/3] flex items-center justify-center rounded-lg text-xl font-bold
+            ${selectedValue === value 
+              ? 'bg-primary-500 text-white' 
+              : 'bg-white dark:bg-dark-700 hover:bg-gray-100 dark:hover:bg-dark-600'}
             ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+            transition-colors
           `}
         >
           {value}

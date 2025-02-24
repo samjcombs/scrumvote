@@ -12,23 +12,27 @@ export async function POST(
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
   
+  const roomId = params.id
+  
   try {
-    const room = getRoom(params.id)
+    const room = getRoom(roomId)
     
     if (!room) {
       return NextResponse.json({ error: 'Room not found' }, { status: 404 })
     }
     
-    if (room.ownerId !== session.user.id) {
+    const userId = (session.user as any).id
+    
+    if (room.ownerId !== userId) {
       return NextResponse.json({ error: 'Only room owner can reveal votes' }, { status: 403 })
     }
     
     // Reveal votes
-    const updatedRoom = revealVotes(params.id)
+    const updatedRoom = revealVotes(roomId)
     
     return NextResponse.json(updatedRoom)
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error revealing votes:', error)
-    return NextResponse.json({ error: 'Failed to reveal votes' }, { status: 500 })
+    return NextResponse.json({ error: error.message }, { status: 500 })
   }
 } 

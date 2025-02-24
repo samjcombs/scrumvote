@@ -6,13 +6,13 @@ import { useRouter } from 'next/navigation'
 export function JoinRoomForm() {
   const [roomId, setRoomId] = useState('')
   const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError] = useState('')
   const router = useRouter()
-  
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
-    setError(null)
+    setError('')
     
     try {
       const response = await fetch('/api/rooms/join', {
@@ -20,9 +20,7 @@ export function JoinRoomForm() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          roomId,
-        }),
+        body: JSON.stringify({ roomId }),
       })
       
       if (!response.ok) {
@@ -30,30 +28,26 @@ export function JoinRoomForm() {
         throw new Error(data.error || 'Failed to join room')
       }
       
-      const data = await response.json()
-      router.push(`/room/${data.id}`)
-    } catch (error) {
+      router.push(`/room/${roomId}`)
+    } catch (error: any) {
       console.error('Error joining room:', error)
-      setError(error instanceof Error ? error.message : 'Failed to join room')
+      setError(error.message)
       setIsLoading(false)
     }
   }
-  
+
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-2">
       {error && (
-        <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-md text-red-500">
-          {error}
-        </div>
+        <p className="text-red-500 text-sm mb-2">{error}</p>
       )}
-      
-      <div className="flex gap-4">
+      <div className="flex gap-2">
         <input 
           type="text" 
           value={roomId}
-          onChange={e => setRoomId(e.target.value)}
+          onChange={(e) => setRoomId(e.target.value)}
           placeholder="Enter room ID" 
-          className="flex-1 p-2 rounded-md bg-white dark:bg-dark-300 border border-gray-300 dark:border-gray-700"
+          className="flex-1 px-4 py-2 border border-gray-300 dark:border-dark-400 rounded-md bg-white dark:bg-dark-700"
           required
         />
         <button 

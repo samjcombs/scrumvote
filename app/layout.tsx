@@ -1,19 +1,19 @@
 import './globals.css'
+import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import { Providers } from './providers'
-import type { ReactNode } from 'react'
 
 const inter = Inter({ subsets: ['latin'] })
 
-export const metadata = {
+export const metadata: Metadata = {
   title: 'Scrum Poker',
-  description: 'A modern Scrum Poker app for agile teams',
+  description: 'A real-time planning poker app for agile teams',
 }
 
 export default function RootLayout({
   children,
 }: {
-  children: ReactNode
+  children: React.ReactNode
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
